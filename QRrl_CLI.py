@@ -1,68 +1,68 @@
-import qrcode 
+import qrcode
+import os
+import re
 from qrcode.image.styledpil import StyledPilImage
 from qrcode.image.styles.moduledrawers import RoundedModuleDrawer
-import re 
-import os 
 
+def is_valid_url(url):
+    """Checks if the string follows a standard URL format."""
+    pattern = r"^https?://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}.*$"
+    return bool(re.match(pattern, url))
 
-set_filcolor = "black"
-set_roundfil = 0
+def get_rounding_ratio():
+    """Handles the user input for the QR module rounding."""
+    while True:
+        choice = input("\nCustomize QR?\n 1 - Set rounding ratio\n 2 - Done (default)\n: ").strip().lower()
+        
+        if choice in ['q', 'quit']:
+            exit()
+        elif choice == '2':
+            return 0.0
+        elif choice == '1':
+            try:
+                ratio = float(input("\nEnter rounding ratio (0.0 - 1.0): "))
+                if 0.0 <= ratio <= 1.0:
+                    return ratio
+                print("\n!!!Please enter a value between 0.0 and 1.0!!!")
+            except ValueError:
+                print("\n!!!Error: Please enter a valid number!!!")
+        else:
+            print("\n!!!Invalid option, try again!!!")
 
-url = input("Enter the URL: ").strip()
-
-# function to validate URL format
-def validate(url):
-    url_patern = r"^https?://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}.*$"
-
-    if re.match(url_patern, url):
-        return True
-    else:
-        return False
-if validate(url) is False:
-    print("Invalid URL format. Please enter a valid URL starting with http:// or https://")
-    exit()
-
-if url.lower() == "q" or url.lower() == "quit":
-    exit()
-
-# customization
-while True:
-    cust = input("\nEnter what you want to customize.\n" 
-                 "1 - round filling \n" 
-                 "2 - done (by default) \n"
-                 ": ").strip()
+def generate_qr(data, rounding_ratio):
+    """Handles the QR generation logic."""
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_M,
+        box_size=10,
+        border=4
+    )
+    qr.add_data(data)
     
-    if cust == '1':
-        try:
-            set_roundfil = float(input("Enter rounding ratio (0.0 - 1.0): "))
-        except ValueError:
-            print("\n ValleError: please enter a number")
+    return qr.make_image(
+        back_color="white",
+        image_factory=StyledPilImage,
+        module_drawer=RoundedModuleDrawer(radius_ratio=rounding_ratio)
+    )
 
-    elif cust == '2':
-        break
-    elif cust.lower() in ["q", 'quit']:
-        exit()
-    else:
-        print("\n Invalid option, try again.")
+def main():
+    user_url = input("\nEnter the URL (or 'q' or 'quit' to quit): ").strip()
+    
+    if user_url.lower() in ['q', 'quit']:
+        return
 
+    if not is_valid_url(user_url):
+        print("\n!!!Invalid URL format. Use 'http://' or 'https://' !!! \n")
+        return
 
+    rounding_ratio = get_rounding_ratio()
+    
+    # Process and Save
+    img = generate_qr(user_url, rounding_ratio)
+    file_name = "qrcode.png"
+    img.save(file_name)
+    
+    print(f"\nSuccess! QR code saved to: {os.path.join(os.getcwd(), file_name)}\n")
 
-
-print("QR code was created in the directory: " + os.getcwd())
-file_path = "qrcode.png"
-
-# qrcode presets
-qr = qrcode.QRCode(
-    version = 1,
-    error_correction = qrcode.constants.ERROR_CORRECT_M,
-    box_size = 10,
-    border = 4
-)
-qr.add_data(url)
-
-img = qr.make_image(
-    back_color = "white",
-    image_factory = StyledPilImage,
-    module_drawer = RoundedModuleDrawer(radius_ratio = set_roundfil)
-                     )
-img.save(file_path)
+if __name__ == "__main__":
+    main()
